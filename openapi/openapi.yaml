@@ -1,0 +1,297 @@
+openapi: 3.0.3
+info:
+  title: Library Management API
+  version: 0.1.0
+  description: |
+    Half-baked library management backend for intern onboarding (Go + PostgreSQL).
+
+    Fully implemented reference slices:
+    - POST /api/v1/users — public member registration
+    - POST /api/v1/auth/login — JWT login
+    - PUT /api/v1/books/{id} — secured book update (ADMIN, LIBRARIAN)
+
+    The Author resource is intentionally left unimplemented.
+  contact:
+    name: Library Engineering
+    email: engineering@library.local
+servers:
+  - url: http://localhost:8080
+tags:
+  - name: Users
+  - name: Authentication
+  - name: Books
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiError:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/FieldViolation"
+    FieldViolation:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+    RegisterUserRequest:
+      type: object
+      required: [email, password, fullName]
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+        password:
+          type: string
+          minLength: 8
+          maxLength: 72
+        fullName:
+          type: string
+          minLength: 2
+          maxLength: 120
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        fullName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+            enum: [ADMIN, LIBRARIAN, MEMBER]
+        enabled:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    LoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresInMs:
+          type: integer
+          format: int64
+        userId:
+          type: string
+        email:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+    UpdateBookRequest:
+      type: object
+      required: [title, authorName, isbn, publicationYear, totalCopies, availableCopies]
+      properties:
+        title:
+          type: string
+          maxLength: 200
+        authorName:
+          type: string
+          maxLength: 160
+        isbn:
+          type: string
+          description: ISBN-10 or ISBN-13 without hyphens
+        description:
+          type: string
+          maxLength: 2000
+        publicationYear:
+          type: integer
+          minimum: 1450
+          maximum: 2100
+        totalCopies:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        availableCopies:
+          type: integer
+          minimum: 0
+          maximum: 10000
+    BookResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        authorName:
+          type: string
+        isbn:
+          type: string
+        description:
+          type: string
+        publicationYear:
+          type: integer
+        totalCopies:
+          type: integer
+        availableCopies:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+paths:
+  /api/v1/users:
+    post:
+      tags: [Users]
+      summary: Register a new member
+      description: Public endpoint that creates a MEMBER account. Email must be unique.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterUserRequest"
+            example:
+              email: reader@example.com
+              password: ReaderPass1
+              fullName: Ada Reader
+      responses:
+        "201":
+          description: User registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Email already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/auth/login:
+    post:
+      tags: [Authentication]
+      summary: Login
+      description: Authenticate with email and password to receive a JWT access token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+            example:
+              email: admin@library.local
+              password: ChangeMe123!
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /api/v1/books/{id}:
+    put:
+      tags: [Books]
+      summary: Update a book
+      description: Fully replaces mutable book fields. Requires ADMIN or LIBRARIAN role.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBookRequest"
+      responses:
+        "200":
+          description: Book updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookResponse"
+        "400":
+          description: Validation failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "403":
+          description: Insufficient role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Book not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: ISBN conflict
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"

@@ -1,0 +1,7 @@
+.git
+.env
+bin
+docs
+README.md
+CONTRIBUTING.md
+**/.cursor
