@@ -30,7 +30,7 @@ Supporting pieces included:
 - User admin APIs (list, role changes, disable)
 - Refresh tokens, password reset, email verification
 
-See [docs/intern-roadmap.md](docs/intern-roadmap.md) for the phased backlog.
+Each remaining capability is specified in [docs/tasks/README.md](docs/tasks/README.md). See [docs/intern-roadmap.md](docs/intern-roadmap.md) for the suggested pace.
 
 ## Architecture
 

@@ -2,6 +2,8 @@
 
 This project ships with **partial** functionality on purpose. Use the implemented user registration, login, and book-update slices as the pattern library. The **Author** resource has no table and no code—design it from scratch.
 
+Product requirements for each remaining capability are in [tasks/README.md](tasks/README.md), one file per capability. This roadmap is the suggested pace. Follow the task file for what the product must do.
+
 Suggested pace: 1–2 milestones per week. Adjust freely.
 
 ## Roles reminder
