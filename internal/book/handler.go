@@ -1,9 +1,7 @@
 package book
 
 import (
-	"net/http"
-
-	"github.com/go-chi/chi/v5"
+	"github.com/gofiber/fiber/v3"
 
 	"github.com/HemanthGowda/library-management-go/internal/auth"
 	"github.com/HemanthGowda/library-management-go/internal/domain"
@@ -19,8 +17,8 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
-	principal, ok := auth.PrincipalFrom(r.Context())
+func (h *Handler) Update(c fiber.Ctx) error {
+	principal, ok := auth.PrincipalFrom(c.Context())
 	if !ok {
 		return domain.Unauthorized("Authentication is required")
 	}
@@ -29,13 +27,13 @@ func (h *Handler) Update(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	var request UpdateBookRequest
-	if err := httpx.Decode(r, &request); err != nil {
+	if err := httpx.Decode(c, &request); err != nil {
 		return err
 	}
 
-	response, err := h.service.Update(r.Context(), chi.URLParam(r, "id"), request)
+	response, err := h.service.Update(c.Context(), c.Params("id"), request)
 	if err != nil {
 		return err
 	}
-	return httpx.WriteJSON(w, http.StatusOK, response)
+	return httpx.WriteJSON(c, fiber.StatusOK, response)
 }

@@ -1,26 +1,24 @@
 package auth
 
 import (
-	"net/http"
 	"strings"
+
+	"github.com/gofiber/fiber/v3"
 )
 
-func Middleware(tokens *JWTService) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			header := r.Header.Get("Authorization")
-			if !strings.HasPrefix(header, "Bearer ") {
-				next.ServeHTTP(w, r)
-				return
-			}
+func Middleware(tokens *JWTService) fiber.Handler {
+	return func(c fiber.Ctx) error {
+		header := c.Get(fiber.HeaderAuthorization)
+		if !strings.HasPrefix(header, "Bearer ") {
+			return c.Next()
+		}
 
-			principal, err := tokens.Parse(strings.TrimSpace(strings.TrimPrefix(header, "Bearer ")))
-			if err != nil {
-				next.ServeHTTP(w, r)
-				return
-			}
+		principal, err := tokens.Parse(strings.TrimSpace(strings.TrimPrefix(header, "Bearer ")))
+		if err != nil {
+			return c.Next()
+		}
 
-			next.ServeHTTP(w, r.WithContext(WithPrincipal(r.Context(), principal)))
-		})
+		c.SetContext(WithPrincipal(c.Context(), principal))
+		return c.Next()
 	}
 }

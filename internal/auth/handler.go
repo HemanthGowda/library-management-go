@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"net/http"
+	"github.com/gofiber/fiber/v3"
 
 	"github.com/HemanthGowda/library-management-go/internal/httpx"
 )
@@ -14,15 +14,15 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) Login(w http.ResponseWriter, r *http.Request) error {
+func (h *Handler) Login(c fiber.Ctx) error {
 	var request LoginRequest
-	if err := httpx.Decode(r, &request); err != nil {
+	if err := httpx.Decode(c, &request); err != nil {
 		return err
 	}
 
-	response, err := h.service.Login(r.Context(), request)
+	response, err := h.service.Login(c.Context(), request)
 	if err != nil {
 		return err
 	}
-	return httpx.WriteJSON(w, http.StatusOK, response)
+	return httpx.WriteJSON(c, fiber.StatusOK, response)
 }

@@ -3,8 +3,8 @@ package app
 import (
 	"context"
 	"fmt"
-	"net/http"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/HemanthGowda/library-management-go/internal/auth"
@@ -18,11 +18,11 @@ import (
 )
 
 type Application struct {
-	Handler http.Handler
-	Pool    *pgxpool.Pool
-	Config  config.Config
-	users   user.Repository
-	books   book.Repository
+	App    *fiber.App
+	Pool   *pgxpool.Pool
+	Config config.Config
+	users  user.Repository
+	books  book.Repository
 }
 
 func New(ctx context.Context, cfg config.Config) (*Application, error) {
@@ -65,11 +65,11 @@ func New(ctx context.Context, cfg config.Config) (*Application, error) {
 	}
 
 	return &Application{
-		Handler: handler,
-		Pool:    pool,
-		Config:  cfg,
-		users:   users,
-		books:   books,
+		App:    handler,
+		Pool:   pool,
+		Config: cfg,
+		users:  users,
+		books:  books,
 	}, nil
 }
 

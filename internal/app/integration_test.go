@@ -6,11 +6,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/gofiber/fiber/v3"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 	"github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -19,10 +19,7 @@ import (
 	"github.com/HemanthGowda/library-management-go/internal/config"
 )
 
-var (
-	application *Application
-	server      *httptest.Server
-)
+var application *Application
 
 func TestMain(m *testing.M) {
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
@@ -59,9 +56,7 @@ func TestMain(m *testing.M) {
 		os.Exit(1)
 	}
 
-	server = httptest.NewServer(application.Handler)
 	code := m.Run()
-	server.Close()
 	application.Close()
 	_ = container.Terminate(context.Background())
 	os.Exit(code)
@@ -184,14 +179,14 @@ func request(t *testing.T, method, path, token string, payload any) (int, map[st
 		reader = bytes.NewReader(nil)
 	}
 
-	req, err := http.NewRequest(method, server.URL+path, reader)
+	req, err := http.NewRequest(method, "http://localhost"+path, reader)
 	require.NoError(t, err)
 	req.Header.Set("Content-Type", "application/json")
 	if token != "" {
 		req.Header.Set("Authorization", "Bearer "+token)
 	}
 
-	response, err := http.DefaultClient.Do(req)
+	response, err := application.App.Test(req, fiber.TestConfig{Timeout: 30 * time.Second})
 	require.NoError(t, err)
 	defer response.Body.Close()
 

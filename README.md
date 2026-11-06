@@ -14,7 +14,7 @@ Only a few vertical slices are fully implemented. The **Author** resource is int
 
 Supporting pieces included:
 
-- Layered architecture: handler → service → repository
+- Fiber HTTP server, with handlers kept thin over services and repositories
 - Request validation with field-level error responses
 - JWT bearer authentication with role-based access
 - SQL migrations and startup seed data

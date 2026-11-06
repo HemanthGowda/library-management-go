@@ -34,7 +34,7 @@ For every new API:
 
 ## Coding conventions
 
-- Go 1.26, constructor injection, standard library `net/http` with chi routes
+- Go 1.26, constructor injection, [Fiber](https://github.com/gofiber/fiber) v3 routes
 - Package by feature (`user`, `book`, and later `author`, `loan`)
 - Do not put business rules in handlers or SQL repositories
 - Never commit secrets; use `.env` or environment variables

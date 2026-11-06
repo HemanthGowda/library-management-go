@@ -1,11 +1,11 @@
 package httpx
 
 import (
-	"encoding/json"
 	"errors"
 	"log/slog"
-	"net/http"
 	"time"
+
+	"github.com/gofiber/fiber/v3"
 
 	"github.com/HemanthGowda/library-management-go/internal/domain"
 )
@@ -19,54 +19,40 @@ type apiError struct {
 	Violations []domain.Violation `json:"violations,omitempty"`
 }
 
-func Decode(r *http.Request, dst any) error {
-	decoder := json.NewDecoder(r.Body)
-	if err := decoder.Decode(dst); err != nil {
+func Decode(c fiber.Ctx, dst any) error {
+	if err := c.Bind().JSON(dst); err != nil {
 		return domain.Malformed()
 	}
 	return nil
 }
 
-func WriteJSON(w http.ResponseWriter, status int, payload any) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	return json.NewEncoder(w).Encode(payload)
+func WriteJSON(c fiber.Ctx, status int, payload any) error {
+	return c.Status(status).JSON(payload)
 }
 
-func Handle(fn func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := fn(w, r); err != nil {
-			WriteError(w, r, err)
-		}
-	}
-}
-
-func WriteError(w http.ResponseWriter, r *http.Request, err error) {
+func WriteError(c fiber.Ctx, err error) error {
 	var domainErr *domain.Error
 	if errors.As(err, &domainErr) {
-		write(w, apiError{
+		return write(c, apiError{
 			Timestamp:  time.Now().UTC(),
 			Status:     domainErr.Status(),
 			Error:      domainErr.Title(),
 			Message:    domainErr.Message,
-			Path:       r.URL.Path,
+			Path:       c.Path(),
 			Violations: domainErr.Violations,
 		})
-		return
 	}
 
-	slog.Error("unhandled request error", "path", r.URL.Path, "error", err)
-	write(w, apiError{
+	slog.Error("unhandled request error", "path", c.Path(), "error", err)
+	return write(c, apiError{
 		Timestamp: time.Now().UTC(),
-		Status:    http.StatusInternalServerError,
+		Status:    fiber.StatusInternalServerError,
 		Error:     "Internal Server Error",
 		Message:   "An unexpected error occurred",
-		Path:      r.URL.Path,
+		Path:      c.Path(),
 	})
 }
 
-func write(w http.ResponseWriter, payload apiError) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(payload.Status)
-	_ = json.NewEncoder(w).Encode(payload)
+func write(c fiber.Ctx, payload apiError) error {
+	return c.Status(payload.Status).JSON(payload)
 }
