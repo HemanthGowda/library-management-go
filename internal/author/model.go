@@ -16,6 +16,7 @@ type CreateAuthorRequest struct {
 }
 
 type AuthorResponse struct {
+	Id          string `json:"id"`
 	Name        string `json:"name"`
 	Biography   string `json:"biography"`
 	Birth       int    `json:"birth"`
