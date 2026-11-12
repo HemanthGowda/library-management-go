@@ -5,17 +5,25 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/HemanthGowda/library-management-go/internal/author"
 	"github.com/HemanthGowda/library-management-go/internal/book"
 	"github.com/HemanthGowda/library-management-go/internal/config"
 	"github.com/HemanthGowda/library-management-go/internal/password"
 	"github.com/HemanthGowda/library-management-go/internal/user"
 )
 
-func Run(ctx context.Context, cfg config.Config, users user.Repository, books book.Repository, passwords password.Encoder) error {
+func Run(ctx context.Context, cfg config.Config, users user.Repository, authors author.Repository, books book.Repository, passwords password.Encoder) error {
 	if err := seedAdmin(ctx, cfg, users, passwords); err != nil {
 		return err
 	}
+
+	if err := seedAuthor(ctx, authors);
+	err != nil {
+		return err
+	}
+
 	return seedBooks(ctx, books)
+
 }
 
 func seedAdmin(ctx context.Context, cfg config.Config, users user.Repository, passwords password.Encoder) error {
@@ -63,4 +71,31 @@ func seedBooks(ctx context.Context, books book.Repository) error {
 		}
 	}
 	return nil
+}
+
+func seedAuthor(ctx context.Context, authors author.Repository) error {
+    samples := []author.Author{
+        {
+            Name:        "Mitch Albom",
+            Biography:   "I am author of book called Tuesdays with Morrie",
+            Birth:       1958,
+            Nationality: "American",
+        },
+    }
+    for _, sample := range samples {
+        exists, err := authors.ExistByName(ctx, sample.Name)
+        if err != nil {
+            return err
+        }
+        if exists {
+            continue
+        }
+        if _, err := authors.Create(ctx, sample); err != nil {
+            if errors.Is(err, author.ErrDuplicate) {
+                continue
+            }
+            return err
+        }
+    }
+    return nil
 }
