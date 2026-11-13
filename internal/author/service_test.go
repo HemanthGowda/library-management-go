@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAutorName(t *testing.T) {
+func TestAutorNameUnique(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
 
@@ -25,15 +25,15 @@ func TestAutorName(t *testing.T) {
 	require.Equal(t, "American", response.Nationality)
 }
 
-func TestAddRejectsDuplicateName(t *testing.T) {
+func TestRejectsDuplicateName(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	repository.byName["Mitch Albom"] = Author{Name: "Mitch Albom"}
 	service := NewService(repository)
 
 	_, err := service.Add(context.Background(), CreateAuthorRequest{
-		Name: "Mitch Albom",
-		Biography: "I am author of book called Tuesdays with morrie",
-		Birth: 1958,
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
 		Nationality: "American",
 	})
 	var domainErr *domain.Error
@@ -41,6 +41,22 @@ func TestAddRejectsDuplicateName(t *testing.T) {
 	require.Equal(t, domain.KindConflict, domainErr.Kind)
 	require.Contains(t, domainErr.Message, "Author already exists")
 
+}
+
+func TestRejectsInvalidYearOfBirth(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       -1,
+		Nationality: "American",
+	})
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, len(domainErr.Violations), 1)
+	require.Contains(t, domainErr.Message, "Request validation failed")
 }
 
 type fakeAuthorRepo struct {
@@ -52,7 +68,7 @@ func newFakeAuthorRepo() *fakeAuthorRepo {
 }
 
 func (f *fakeAuthorRepo) ExistByName(_ context.Context, name string) (bool, error) {
-	_, ok := f.byName[name];
+	_, ok := f.byName[name]
 	return ok, nil
 }
 

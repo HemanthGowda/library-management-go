@@ -17,7 +17,7 @@ func NewHandler(service *Service) *Handler {
 	return &Handler{service: service}
 }
 
-func (h *Handler) Add(c fiber.Ctx) error {
+func (h *Handler) Register(c fiber.Ctx) error {
 	principal, ok := auth.PrincipalFrom(c.Context())
 	if !ok {
 		return domain.Unauthorized("Authentication is required")
