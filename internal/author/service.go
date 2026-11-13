@@ -54,7 +54,7 @@ func (s *Service) Add(ctx context.Context, request CreateAuthorRequest) (AuthorR
 	return toResponse(created), nil
 }
 
-func validateAuthor(name, biography string, birth int, nationality string) []domain.Violation {
+func validateAuthor(name string, biography string, birth int, nationality string) []domain.Violation {
 	var violations []domain.Violation
 	switch {
 	case name == "":

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAutorName(t *testing.T) {
+func TestDuplicateAutorName(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
 

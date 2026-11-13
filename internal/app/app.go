@@ -81,7 +81,7 @@ func New(ctx context.Context, cfg config.Config) (*Application, error) {
 }
 
 func (a *Application) Seed(ctx context.Context) error {
-	return seed.Run(ctx, a.Config, a.users, a.authors, a.books, password.Bcrypt{})
+	return seed.Run(ctx, a.Config, a.users, a.books, password.Bcrypt{})
 }
 
 func (a *Application) Close() {

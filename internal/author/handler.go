@@ -3,11 +3,10 @@ package author
 import (
 	"github.com/gofiber/fiber/v3"
 
-	"github.com/HemanthGowda/library-management-go/internal/httpx"
-	"github.com/HemanthGowda/library-management-go/internal/domain"
 	"github.com/HemanthGowda/library-management-go/internal/auth"
+	"github.com/HemanthGowda/library-management-go/internal/domain"
+	"github.com/HemanthGowda/library-management-go/internal/httpx"
 	"github.com/HemanthGowda/library-management-go/internal/user"
-
 )
 
 type Handler struct {
