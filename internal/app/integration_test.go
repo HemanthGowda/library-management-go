@@ -115,6 +115,15 @@ func TestUpdateBookForbidsMemberRole(t *testing.T) {
 	require.Equal(t, "Forbidden", body["error"])
 }
 
+func TestRegisterAuthorForbidsDuplicateName(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	insertAuthor(t, "mitch albom", "I am author of book called Tuesdays with morrie", 1958, "American")
+	status, _ := request(t, http.MethodPost, "/api/v2/author", token, validAuthor())
+	require.Equal(t, http.StatusConflict, status)
+}
+
 func TestLoginRejectsBadPassword(t *testing.T) {
 	reset(t)
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
@@ -154,6 +163,16 @@ func insertBook(t *testing.T) string {
 	`, id)
 	require.NoError(t, err)
 	return id
+}
+
+func insertAuthor(t *testing.T, name, biography string, birth int, nationality string) {
+	t.Helper()
+	id := uuid.NewString()
+	_, err := application.Pool.Exec(context.Background(), `
+		INSERT INTO authors (id, name, biography, birth, nationality)
+		VALUES ($1, 'Seed Name', 'Seed Biography', '1995', 'nation')
+	`, id)
+	require.NoError(t, err)
 }
 
 func login(t *testing.T, email, rawPassword string) string {
@@ -204,5 +223,14 @@ func validBook() map[string]any {
 		"publicationYear": 2021,
 		"totalCopies":     6,
 		"availableCopies": 5,
+	}
+}
+
+func validAuthor() map[string]any {
+	return map[string]any{
+		"name":        "mitch albom",
+		"biography":   "I am author of book called Tuesdays with morrie",
+		"birth":       1956,
+		"nationality": "American",
 	}
 }

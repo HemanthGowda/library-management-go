@@ -76,7 +76,6 @@ func New(ctx context.Context, cfg config.Config) (*Application, error) {
 		users:  users,
 		books:  books,
 		authors: authors,
-
 	}, nil
 }
 
