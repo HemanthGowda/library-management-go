@@ -2,6 +2,7 @@ package author
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/HemanthGowda/library-management-go/internal/domain"
@@ -43,7 +44,39 @@ func TestRejectsDuplicateName(t *testing.T) {
 
 }
 
-func TestRejectsInvalidYearOfBirth(t *testing.T) {
+func TestRejectsNameOutOfRange(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        strings.Repeat("Mitch Albom", 50),
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, len(domainErr.Violations), 1)
+	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
+func TestRejectsBiographyOutOfRange(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   strings.Repeat("I am author of book called Tuesdays with morrie", 100),
+		Birth:       1958,
+		Nationality: "American",
+	})
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, len(domainErr.Violations), 1)
+	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
+func TestRejectsInvalidYearOfBirthLesserThanZero(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
 
@@ -52,6 +85,38 @@ func TestRejectsInvalidYearOfBirth(t *testing.T) {
 		Biography:   "I am author of book called Tuesdays with morrie",
 		Birth:       -1,
 		Nationality: "American",
+	})
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, len(domainErr.Violations), 1)
+	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
+func TestRejectsInvalidYearOfBirthGreaterCanCurrentYear(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       2027,
+		Nationality: "American",
+	})
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, len(domainErr.Violations), 1)
+	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
+func TestRejectsCountryNameOutOfRange(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1987,
+		Nationality: strings.Repeat("American", 30),
 	})
 	var domainErr *domain.Error
 	require.ErrorAs(t, err, &domainErr)
