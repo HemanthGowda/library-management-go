@@ -120,7 +120,7 @@ func TestRegisterAuthorForbidsDuplicateName(t *testing.T) {
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	insertAuthor(t, "mitch albom", "I am author of book called Tuesdays with morrie", 1958, "American")
-	status, _ := request(t, http.MethodPost, "/api/v2/author", token, validAuthor())
+	status, _ := request(t, http.MethodPost, "/api/v1/author", token, validAuthor())
 	require.Equal(t, http.StatusConflict, status)
 }
 
@@ -170,8 +170,8 @@ func insertAuthor(t *testing.T, name, biography string, birth int, nationality s
 	id := uuid.NewString()
 	_, err := application.Pool.Exec(context.Background(), `
 		INSERT INTO authors (id, name, biography, birth, nationality)
-		VALUES ($1, 'Seed Name', 'Seed Biography', '1995', 'nation')
-	`, id)
+		VALUES ($1, $2, $3, $4, $5)
+	`, id, name, biography, birth, nationality)
 	require.NoError(t, err)
 }
 
