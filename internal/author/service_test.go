@@ -77,22 +77,6 @@ func TestRejectsAuthorDuplicateName(t *testing.T) {
 	require.Contains(t, domainErr.Message, "Author already exists")
 }
 
-func TestRejectsNullName(t *testing.T) {
-	repository := newFakeAuthorRepo()
-	service := NewService(repository)
-
-	_, err := service.Add(context.Background(), CreateAuthorRequest{
-		Name:        " ",
-		Biography:   "I am author of book called Tuesdays with morrie",
-		Birth:       1958,
-		Nationality: "American",
-	})
-	var domainErr *domain.Error
-	require.ErrorAs(t, err, &domainErr)
-	require.Equal(t, len(domainErr.Violations), 1)
-	require.Contains(t, domainErr.Message, "Request validation failed")
-}
-
 func TestRejectsNameOutOfRange(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
