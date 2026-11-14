@@ -67,13 +67,11 @@ func validateAuthor(name string, biography string, birth int, nationality string
 		violations = append(violations, domain.Violation{Field: "biography", Message: "Biography must be at most 4000 characters"})
 	}
 
-	if birth != 0 {
-		switch {
-		case birth < 1:
-			violations = append(violations, domain.Violation{Field: "birth", Message: "Birth year must be greater than 0"})
-		case birth > time.Now().Year():
-			violations = append(violations, domain.Violation{Field: "birth", Message: "Birth year cannot be in the future"})
-		}
+	switch {
+	case birth < 1:
+		violations = append(violations, domain.Violation{Field: "birth", Message: "Birth year must be greater than 0"})
+	case birth > time.Now().Year():
+		violations = append(violations, domain.Violation{Field: "birth", Message: "Birth year cannot be in the future"})
 	}
 
 	if utf8.RuneCountInString(nationality) > 80 {

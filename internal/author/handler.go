@@ -35,5 +35,5 @@ func (h *Handler) Register(c fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return httpx.WriteJSON(c, fiber.StatusOK, response)
+	return httpx.WriteJSON(c, fiber.StatusCreated, response)
 }

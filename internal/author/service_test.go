@@ -26,7 +26,41 @@ func TestAutorNameUnique(t *testing.T) {
 	require.Equal(t, "American", response.Nationality)
 }
 
-func TestRejectsDuplicateName(t *testing.T) {
+func TestRejectsEmptyAuthorName(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "",
+		Biography:   "Author biography",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, domain.KindValidation, domainErr.Kind)
+	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
+func TestRejectsAuthorNameWithOnlySpaces(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "     ",
+		Biography:   "Author biography",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, domain.KindValidation, domainErr.Kind)
+	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
+func TestRejectsAuthorDuplicateName(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	repository.byName["Mitch Albom"] = Author{Name: "Mitch Albom"}
 	service := NewService(repository)
@@ -41,7 +75,6 @@ func TestRejectsDuplicateName(t *testing.T) {
 	require.ErrorAs(t, err, &domainErr)
 	require.Equal(t, domain.KindConflict, domainErr.Kind)
 	require.Contains(t, domainErr.Message, "Author already exists")
-
 }
 
 func TestRejectsNullName(t *testing.T) {
@@ -76,6 +109,57 @@ func TestRejectsNameOutOfRange(t *testing.T) {
 	require.Contains(t, domainErr.Message, "Request validation failed")
 }
 
+func TestAuthorNameTrimmedSpaces(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	response, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "  Mitch Albom  ",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Mitch Albom", response.Name)
+	require.Equal(t, "I am author of book called Tuesdays with morrie", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "American", response.Nationality)
+}
+
+func TestAuthorBiographyIsOptional(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	response, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "",
+		Birth:       1958,
+		Nationality: "American",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Mitch Albom", response.Name)
+	require.Empty(t, response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "American", response.Nationality)
+}
+
+func TestAuthorBiographyTrimmedSpaces(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	response, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "   I am author of book called Tuesdays with morrie     ",
+		Birth:       1958,
+		Nationality: "American",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Mitch Albom", response.Name)
+	require.Equal(t, "I am author of book called Tuesdays with morrie", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "American", response.Nationality)
+}
+
 func TestRejectsBiographyOutOfRange(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
@@ -108,6 +192,22 @@ func TestRejectsInvalidYearOfBirthLesserThanZero(t *testing.T) {
 	require.Contains(t, domainErr.Message, "Request validation failed")
 }
 
+func TestRejectsInvalidYearOfBirthLIsZero(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       -1,
+		Nationality: "American",
+	})
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, len(domainErr.Violations), 1)
+	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
 func TestRejectsInvalidYearOfBirthGreaterCanCurrentYear(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
@@ -124,6 +224,23 @@ func TestRejectsInvalidYearOfBirthGreaterCanCurrentYear(t *testing.T) {
 	require.Contains(t, domainErr.Message, "Request validation failed")
 }
 
+func TestAuthorNationalityTrimmedSpaces(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	response, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "   I am author of book called Tuesdays with morrie     ",
+		Birth:       1958,
+		Nationality: "American",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Mitch Albom", response.Name)
+	require.Equal(t, "I am author of book called Tuesdays with morrie", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "American", response.Nationality)
+}
+
 func TestRejectsCountryNameOutOfRange(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
@@ -138,6 +255,23 @@ func TestRejectsCountryNameOutOfRange(t *testing.T) {
 	require.ErrorAs(t, err, &domainErr)
 	require.Equal(t, len(domainErr.Violations), 1)
 	require.Contains(t, domainErr.Message, "Request validation failed")
+}
+
+func TestAuthorNationalityIsOptional(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	response, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: " ",
+	})
+	require.NoError(t, err)
+	require.Equal(t, "Mitch Albom", response.Name)
+	require.Equal(t, "I am author of book called Tuesdays with morrie", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Empty(t, response.Nationality)
 }
 
 type fakeAuthorRepo struct {
@@ -157,7 +291,7 @@ func (f *fakeAuthorRepo) Create(_ context.Context, author Author) (Author, error
 	if _, ok := f.byName[author.Name]; ok {
 		return Author{}, ErrDuplicate
 	}
-	author.Name = "Mitch Albom"
+
 	f.byName[author.Name] = author
 	return author, nil
 }
