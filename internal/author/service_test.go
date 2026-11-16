@@ -291,3 +291,4 @@ func (f *fakeAuthorRepo) Create(_ context.Context, author Author) (Author, error
 	f.byName[author.Name] = author
 	return author, nil
 }
+
