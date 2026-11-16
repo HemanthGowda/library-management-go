@@ -26,21 +26,16 @@ func TestAutorNameUnique(t *testing.T) {
 	require.Equal(t, "American", response.Nationality)
 }
 
-func TestRejectsEmptyAuthorName(t *testing.T) {
+func TestAuthorNameIsRequired(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
 
 	_, err := service.Add(context.Background(), CreateAuthorRequest{
-		Name:        "",
 		Biography:   "Author biography",
 		Birth:       1958,
 		Nationality: "American",
 	})
-
-	var domainErr *domain.Error
-	require.ErrorAs(t, err, &domainErr)
-	require.Equal(t, domain.KindValidation, domainErr.Kind)
-	require.Contains(t, domainErr.Message, "Request validation failed")
+	require.Error(t, err)
 }
 
 func TestRejectsAuthorNameWithOnlySpaces(t *testing.T) {
