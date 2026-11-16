@@ -35,7 +35,10 @@ func TestAuthorNameIsRequired(t *testing.T) {
 		Birth:       1958,
 		Nationality: "American",
 	})
-	require.Error(t, err)
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, domain.KindValidation, domainErr.Kind)
+	require.Contains(t, domainErr.Message, "Request validation failed")
 }
 
 func TestRejectsAuthorNameWithOnlySpaces(t *testing.T) {
