@@ -75,7 +75,7 @@ func TestRejectsAuthorDuplicateName(t *testing.T) {
 	require.Contains(t, domainErr.Message, "Author already exists")
 }
 
-func TestRejectsNullName(t *testing.T) {
+func TestRejectsEmptyName(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
 
