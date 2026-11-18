@@ -37,3 +37,20 @@ func (h *Handler) Register(c fiber.Ctx) error {
 	}
 	return httpx.WriteJSON(c, fiber.StatusCreated, response)
 }
+
+func (h *Handler) View(c fiber.Ctx) error {
+	principal, ok := auth.PrincipalFrom(c.Context())
+	if !ok {
+		return domain.Unauthorized("Authentication is required")
+	}
+	if !principal.HasAny(user.RoleAdmin, user.RoleLibrarian, user.RoleMember) {
+		return domain.Forbidden()
+	}
+	id := c.Query("id")
+	response, err := h.service.View(c.Context(), id)
+	if err != nil {
+		return err
+	}
+
+	return httpx.WriteJSON(c, fiber.StatusOK, response)
+}

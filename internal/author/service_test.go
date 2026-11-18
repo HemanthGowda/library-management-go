@@ -259,15 +259,42 @@ func TestAuthorNationalityIsOptional(t *testing.T) {
 	service := NewService(repository)
 
 	response, err := service.Add(context.Background(), CreateAuthorRequest{
-		Name:        "Mitch Albom",
-		Biography:   "I am author of book called Tuesdays with morrie",
-		Birth:       1958,
+		Name:      "Mitch Albom",
+		Biography: "I am author of book called Tuesdays with morrie",
+		Birth:     1958,
 	})
 	require.NoError(t, err)
 	require.Equal(t, "Mitch Albom", response.Name)
 	require.Equal(t, "I am author of book called Tuesdays with morrie", response.Biography)
 	require.Equal(t, 1958, response.Birth)
 	require.Empty(t, response.Nationality)
+}
+func TestViewAuthor(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	authorID := "d2e6b13b-e1b9-48c9-a623-84c034a1912e"
+	repository.byName["Palle Vasu"] = Author{
+		Id:          authorID,
+		Name:        "Palle Vasu",
+		Biography:   "Author of WE WERE NEVER MEANT TO BE",
+		Birth:       1958,
+		Nationality: "American",
+	}
+	service := NewService(repository)
+	response, err := service.View(context.Background(), authorID)
+	require.NoError(t, err)
+	require.Equal(t, "Palle Vasu", response.Name)
+	require.Equal(t, "Author of WE WERE NEVER MEANT TO BE", response.Biography)
+	require.Equal(t, 1958, response.Birth)
+	require.Equal(t, "American", response.Nationality)
+}
+func TestViewAuthorNotFound(t *testing.T) {
+    repository := newFakeAuthorRepo()
+    service := NewService(repository)
+    _, err := service.View(context.Background(), "Unknown Author")
+    var domainErr *domain.Error
+    require.ErrorAs(t, err, &domainErr)
+    require.Equal(t, domain.KindNotFound, domainErr.Kind)
+    require.Contains(t, domainErr.Message, "Author not found")
 }
 
 type fakeAuthorRepo struct {
@@ -292,3 +319,19 @@ func (f *fakeAuthorRepo) Create(_ context.Context, author Author) (Author, error
 	return author, nil
 }
 
+func (f *fakeAuthorRepo) ViewAuthor(ctx context.Context, id string) (Author, error) {
+	for _, author := range f.byName {
+		if author.Id == id {
+			return author, nil
+		}
+	}
+	return Author{}, ErrNotFound
+}
+
+func (f *fakeAuthorRepo) GetByName(_ context.Context, name string) (Author, error) {
+	author, ok := f.byName[name]
+	if !ok {
+		return Author{}, ErrNotFound
+	}
+	return author, nil
+}

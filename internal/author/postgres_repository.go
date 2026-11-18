@@ -34,21 +34,59 @@ func (r *PostgresRepository) Create(ctx context.Context, author Author) (Author,
 
 	author.Id = uuid.NewString()
 
+	query := `
+		INSERT INTO authors (
+			id,
+			name,
+			biography,
+			birth,
+			nationality
+		)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, created_at, updated_at
+	`
 	err := r.pool.QueryRow(
 		ctx,
-		`INSERT INTO authors (id, name, biography, birth, nationality)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING id`,
+		query,
 		author.Id,
 		author.Name,
 		author.Biography,
 		author.Birth,
 		author.Nationality,
-	).Scan(&author.Id)
+	).Scan(
+		&author.Id,
+		&author.CreatedAt,
+		&author.UpdatedAt,
+	)
 
 	if db.IsUniqueViolation(err) {
 		return Author{}, ErrDuplicate
 	}
+
+	if err != nil {
+		return Author{}, err
+	}
+
+	return author, nil
+}
+
+func (r *PostgresRepository) ViewAuthor(ctx context.Context, id string) (Author, error) {
+	var author Author
+	query := `
+        SELECT id, name, biography, birth, nationality,
+               created_at, updated_at
+        FROM authors
+        WHERE id = $1
+    `
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&author.Id,
+		&author.Name,
+		&author.Biography,
+		&author.Birth,
+		&author.Nationality,
+		&author.CreatedAt,
+		&author.UpdatedAt,
+	)
 
 	if err != nil {
 		return Author{}, err

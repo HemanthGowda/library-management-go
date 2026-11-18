@@ -207,7 +207,25 @@ func TestUnauthenticatedUserCannotAddAuthor(t *testing.T) {
 	status, _ := request(t, http.MethodPost, "/api/v1/authors", "", validAuthor())
 	require.Equal(t, http.StatusUnauthorized, status)
 }
-
+func TestMemberCanViewAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+	adminToken := login(t, "admin@library.local", "ChangeMe123!")
+	status, _ := request(t, http.MethodPost, "/api/v1/authors", adminToken, validAuthor())
+	require.Equal(t, http.StatusCreated, status)
+}
+func TestUnauthenticatedUserCannotViewAuthor(t *testing.T) {
+	reset(t)
+	status, _ := request(t, http.MethodGet,"/api/v1/authors","",nil)
+	require.Equal(t, http.StatusUnauthorized, status)
+}
+func TestAdminCanViewAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	status, _ := request(t, http.MethodPost, "/api/v1/authors", token, validAuthor())
+	require.Equal(t, http.StatusCreated, status)
+}
 func login(t *testing.T, email, rawPassword string) string {
 	t.Helper()
 	status, body := request(t, http.MethodPost, "/api/v1/auth/login", "", map[string]any{

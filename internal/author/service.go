@@ -77,15 +77,35 @@ func validateAuthor(name string, biography string, birth int, nationality string
 	if utf8.RuneCountInString(nationality) > 80 {
 		violations = append(violations, domain.Violation{Field: "nationality", Message: "Nationality must be at most 80 characters"})
 	}
-
 	return violations
 }
 
-func toResponse(author Author) AuthorResponse {
+func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
+    author, err := s.repository.ViewAuthor(ctx, id)
+	if err != nil{
+	if err == ErrNotFound {
+		return AuthorResponse{}, domain.NotFound("Author not found")
+	}
+	return AuthorResponse{}, err
+	}
 	return AuthorResponse{
 		Name:        author.Name,
 		Biography:   author.Biography,
 		Birth:       author.Birth,
 		Nationality: author.Nationality,
+	}, nil
+}
+
+func toResponse(author Author) AuthorResponse {
+	return AuthorResponse{
+		Id:          author.Id,
+		Name:        author.Name,
+		Biography:   author.Biography,
+		Birth:       author.Birth,
+		Nationality: author.Nationality,
+		CreatedAt:   author.CreatedAt,
+		UpdatedAt:   author.UpdatedAt,
 	}
 }
+
+

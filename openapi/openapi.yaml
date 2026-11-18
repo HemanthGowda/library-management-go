@@ -193,8 +193,6 @@ components:
           type: integer
         nationality:
           type: string
-        
-
 paths:
   /api/v1/users:
     post:
@@ -331,6 +329,21 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/CreateAuthorRequest"
+            example:
+              name: Alice
+              biography: I am an author
+              birth: 1995
+              nationality: mexican
+    get:
+      tags: [Authors]
+      summary: View author details through the author id
+      description: public endpoint will view existing author
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthorResponse"
             example:
               name: Alice
               biography: I am an author
