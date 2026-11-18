@@ -88,7 +88,47 @@ curl -s -X POST http://localhost:8080/api/v1/author \
     "path": "/api/v1/author"
 }
 ```
+**Implemented URL**
 
+(GET)http://localhost:8080/api/v1/authors?id
 
+- before Viewing author, librarian or admin should login (A member and Unauthorized Members are refused to view authors)
 
+**View Author who is existing**
+
+```bash
+{
+    "id": "",
+    "name": "Toshikazu Kawaguchi",
+    "biography": "I am author of book called Before coffee gets cold",
+    "birth": 1958,
+    "nationality": "American",
+    "created_at": "0001-01-01T00:00:00Z",
+    "updated_at": "0001-01-01T00:00:00Z"
+}
+```
+
+**View Author without Login**
+
+```bash
+{
+    "timestamp": "2026-11-13T11:04:16.540416815Z",
+    "status": 401,
+    "error": "Unauthorized",
+    "message": "Authentication is required",
+    "path": "/api/v1/author"
+}
+```
+
+**View author who is not existing**
+
+```bash
+{
+    "timestamp": "2026-11-18T04:25:13.454533674Z",
+    "status": 500,
+    "error": "Internal Server Error",
+    "message": "An unexpected error occurred",
+    "path": "/api/v1/authors"
+}
+```
 
