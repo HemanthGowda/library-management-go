@@ -107,8 +107,10 @@ func TestUpdateBookRequiresAuthentication(t *testing.T) {
 
 func TestUpdateBookForbidsMemberRole(t *testing.T) {
 	reset(t)
+
 	insertUser(t, "member@library.local", "MemberPass1", "Library Member", "MEMBER")
 	bookID := insertBook(t)
+
 	token := login(t, "member@library.local", "MemberPass1")
 	status, body := request(t, http.MethodPut, "/api/v1/books/"+bookID, token, validBook())
 	require.Equal(t, http.StatusForbidden, status)
@@ -118,6 +120,7 @@ func TestUpdateBookForbidsMemberRole(t *testing.T) {
 func TestRegisterAuthorForbidsDuplicateName(t *testing.T) {
 	reset(t)
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	insertAuthor(t, "Toshikazu Kawaguchi", "I am author of book called Before coffee gets cold", 1958, "American")
 	status, _ := request(t, http.MethodPost, "/api/v1/authors", token, validAuthor())
@@ -179,6 +182,7 @@ func insertAuthor(t *testing.T, name, biography string, birth int, nationality s
 func TestLibrarianCanAddAuthor(t *testing.T) {
 	reset(t)
 	insertUser(t, "librarian@library.local", "LibrarianPass1", "Library Staff", "LIBRARIAN")
+
 	token := login(t, "librarian@library.local", "LibrarianPass1")
 	status, _ := request(t, http.MethodPost, "/api/v1/authors", token, validAuthor())
 	require.Equal(t, http.StatusCreated, status)
@@ -188,6 +192,7 @@ func TestMemberCannotAddAuthor(t *testing.T) {
 	reset(t)
 	insertUser(t, "member@library.local", "MemberPass1", "Library Member", "MEMBER")
 	token := login(t, "member@library.local", "MemberPass1")
+
 	status, body := request(t, http.MethodPost, "/api/v1/authors", token, validAuthor())
 	require.Equal(t, http.StatusForbidden, status)
 	require.Equal(t, "Forbidden", body["error"])
@@ -200,9 +205,12 @@ func TestUnauthenticatedUserCannotAddAuthor(t *testing.T) {
 }
 func TestGetAuthorForLoggedInAdminSucceeds(t *testing.T) {
 	reset(t)
+
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "I am author of book called Before coffee gets cold", 1958, "American")
+
 	status, author := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", author["name"])
@@ -211,18 +219,23 @@ func TestGetAuthorForLoggedInAdminSucceeds(t *testing.T) {
 }
 func TestAdminCanViewAuthor(t *testing.T) {
 	reset(t)
+
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+
 	token := login(t, "admin@library.local", "ChangeMe123!")
-	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "Japanese")
+	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "American")
 	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
 }
 func TestLibrarianCanViewAuthor(t *testing.T) {
 	reset(t)
+
 	insertUser(t, "librarian@library.local", "LibrarianPass1", "Library Staff", "LIBRARIAN")
 	token := login(t, "librarian@library.local", "LibrarianPass1")
-	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "Japanese")
+	
+	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "American")
 	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
