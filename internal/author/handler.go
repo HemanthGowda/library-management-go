@@ -46,6 +46,7 @@ func (h *Handler) View(c fiber.Ctx) error {
 	if !principal.HasAny(user.RoleAdmin, user.RoleLibrarian, user.RoleMember) {
 		return domain.Forbidden()
 	}
+	
 	id := c.Query("id")
 	response, err := h.service.View(c.Context(), id)
 	if err != nil {
