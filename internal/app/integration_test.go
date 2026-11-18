@@ -119,7 +119,7 @@ func TestRegisterAuthorForbidsDuplicateName(t *testing.T) {
 	reset(t)
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
 	token := login(t, "admin@library.local", "ChangeMe123!")
-	insertAuthor(t, "mitch albom", "I am author of book called Tuesdays with morrie", 1958, "American")
+	insertAuthor(t, "Toshikazu Kawaguchi", "I am author of book called Before coffee gets cold", 1958, "American")
 	status, _ := request(t, http.MethodPost, "/api/v1/authors", token, validAuthor())
 	require.Equal(t, http.StatusConflict, status)
 }
@@ -202,12 +202,30 @@ func TestGetAuthorForLoggedInAdminSucceeds(t *testing.T) {
 	reset(t)
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
 	token := login(t, "admin@library.local", "ChangeMe123!")
-
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "I am author of book called Before coffee gets cold", 1958, "American")
-
 	status, author := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
-	require.Equal(t, author, validAuthor())
+	require.Equal(t, "Toshikazu Kawaguchi", author["name"])
+	require.Equal(t, "American", author["nationality"])
+	require.Equal(t, float64(1958), author["birth"])
+}
+func TestAdminCanViewAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "Japanese")
+	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
+}
+func TestLibrarianCanViewAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "librarian@library.local", "LibrarianPass1", "Library Staff", "LIBRARIAN")
+	token := login(t, "librarian@library.local", "LibrarianPass1")
+	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "Japanese")
+	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	require.Equal(t, http.StatusOK, status)
+	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
 }
 func TestUnauthenticatedUserCannotViewAuthor(t *testing.T) {
 	reset(t)

@@ -82,6 +82,7 @@ func validateAuthor(name string, biography string, birth int, nationality string
 
 func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
 	author, err := s.repository.ViewAuthor(ctx, id)
+	
 	if err != nil {
 		if err == ErrNotFound {
 			return AuthorResponse{}, domain.NotFound("Author not found")
