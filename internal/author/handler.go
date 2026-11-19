@@ -7,6 +7,8 @@ import (
 	"github.com/HemanthGowda/library-management-go/internal/domain"
 	"github.com/HemanthGowda/library-management-go/internal/httpx"
 	"github.com/HemanthGowda/library-management-go/internal/user"
+
+	"strconv"
 )
 
 type Handler struct {
@@ -51,6 +53,46 @@ func (h *Handler) View(c fiber.Ctx) error {
 
 	id := c.Params("id")
 	response, err := h.service.View(c.Context(), id)
+
+	if err != nil {
+		return err
+	}
+
+	return httpx.WriteJSON(c, fiber.StatusOK, response)
+}
+
+func (h *Handler) Search(c fiber.Ctx) error {
+	principal, ok := auth.PrincipalFrom(c.Context())
+
+	if !ok {
+		return domain.Unauthorized("Authentication is required")
+	}
+
+	if !principal.HasAny(user.RoleAdmin, user.RoleLibrarian, user.RoleMember) {
+		return domain.Forbidden()
+	}
+
+	page := 1
+	limit := 20
+
+	if value := c.Query("page"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 {
+			return domain.BadRequest("Invalid page number")
+		}
+		page = parsed
+	}
+
+	if value := c.Query("limit"); value != "" {
+		parsed, err := strconv.Atoi(value)
+		if err != nil || parsed < 1 {
+			return domain.BadRequest("Invalid Limit")
+		}
+		limit = parsed
+	}
+
+	name := c.Query("name")
+	response, err := h.service.Search(c.Context(), name, page, limit)
 
 	if err != nil {
 		return err

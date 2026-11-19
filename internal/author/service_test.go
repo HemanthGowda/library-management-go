@@ -327,11 +327,33 @@ func (f *fakeAuthorRepo) ViewAuthor(ctx context.Context, id string) (Author, err
 	}
 	return Author{}, ErrNotFound
 }
-
+ 
 func (f *fakeAuthorRepo) GetByName(_ context.Context, name string) (Author, error) {
 	author, ok := f.byName[name]
 	if !ok {
 		return Author{}, ErrNotFound
 	}
 	return author, nil
+}
+
+func (f *fakeAuthorRepo) SearchAuthor(_ context.Context, name string, page, limit int) ([]Author, error) {
+	authors := make([]Author, 0)
+
+	for name := range f.byName {
+		if strings.ContainsAny(f.byName[name].Name, name) {
+		authors = append(authors, f.byName[name])
+		}
+	}
+	return authors, nil
+}
+ 
+func (f *fakeAuthorRepo) CountAuthors(_ context.Context, name string) (int, error) {
+	var count int
+
+	for name := range f.byName {
+		if strings.ContainsAny(f.byName[name].Name, name) {
+			count += 1
+		}
+	}
+	return count, nil
 }

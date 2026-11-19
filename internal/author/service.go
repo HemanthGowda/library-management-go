@@ -82,7 +82,7 @@ func validateAuthor(name string, biography string, birth int, nationality string
 
 func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
 	author, err := s.repository.ViewAuthor(ctx, id)
-	
+
 	if err != nil {
 		if err == ErrNotFound {
 			return AuthorResponse{}, domain.NotFound("Author not found")
@@ -97,6 +97,34 @@ func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
 	}, nil
 }
 
+func (s *Service) Search(ctx context.Context, name string, page int, limit int) (PaginatedResponse, error) {
+	offset := (page - 1) * limit
+
+	authors, err := s.repository.SearchAuthor(ctx, name, limit, offset)
+	if err != nil {
+		return PaginatedResponse{}, err
+	}
+
+	responses := make([]AuthorResponse, 0, len(authors))
+
+	for _, author := range authors {
+		responses = append(responses, toResponse(author))
+	}
+
+	total, err := s.repository.CountAuthors(ctx, name)
+
+	totalpages := (total + limit - 1) / limit
+
+	return PaginatedResponse{
+		Data:       authors,
+		Total:      total,
+		Page:       page,
+		TotalPages: totalpages,
+		Limit:      limit,
+	}, nil
+
+}
+
 func toResponse(author Author) AuthorResponse {
 	return AuthorResponse{
 		Id:          author.Id,
@@ -107,4 +135,8 @@ func toResponse(author Author) AuthorResponse {
 		CreatedAt:   author.CreatedAt,
 		UpdatedAt:   author.UpdatedAt,
 	}
+}
+
+func returnPaginatedAuthors(ctx context.Context, authors []Author, total, page, limit int) {
+
 }
