@@ -275,6 +275,23 @@ func TestUnauthenticatedUserCannotSearchAuthor(t *testing.T) {
 	status, _ := request(t, http.MethodGet, "/api/v1/authors", "", nil)
 	require.Equal(t, http.StatusUnauthorized, status)
 }
+func TestSearchPageMaintainLimitedAuthors(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	insertAuthor(t, "Mitch Albom", "I am author of book called Tuesdays with morrie", 1958, "American")
+	insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+	insertAuthor(t, "patrik", "I am author", 1958, "American")
+	insertAuthor(t, "ritivik  ", "I am author", 1958, "American")
+
+	status, response := request(t, http.MethodGet, "http://localhost:8080/api/v1/authors?name=pa&page=1&limit=2", token, validAuthor())
+	status1, response1 := request(t, http.MethodGet, "http://localhost:8080/api/v1/authors?name=pa&page=1&limit=2", token, validAuthor())
+
+	author_list1 := response["author_list"].([]any)
+	author_list2 := response1["author_list"].([]any)
+
+}
 func login(t *testing.T, email, rawPassword string) string {
 	t.Helper()
 	status, body := request(t, http.MethodPost, "/api/v1/auth/login", "", map[string]any{
@@ -286,7 +303,6 @@ func login(t *testing.T, email, rawPassword string) string {
 	require.NotEmpty(t, token)
 	return token
 }
-
 func request(t *testing.T, method, path, token string, payload any) (int, map[string]any) {
 	t.Helper()
 	var reader *bytes.Reader
@@ -335,5 +351,28 @@ func validAuthor() map[string]any {
 		"nationality": "American",
 		"created_at":  "0001-01-01T00:00:00Z",
 		"updated_at":  "0001-01-01T00:00:00Z",
+	}
+}
+
+func validSearch(id string) []map[string]any {
+	return []map[string]any{
+		{
+			"id":          id,
+			"name":        "ritivik",
+			"biography":   "I am author of book called i cant say goodbye to you",
+			"birth":       1958,
+			"nationality": "American",
+			"created_at":  "2026-11-18T08:08:48.254054Z",
+			"updated_at":  "2026-11-18T08:08:48.254054Z",
+		},
+		{
+			"id":          id,
+			"name":        "palle vasu",
+			"biography":   "I am author of book called WE WERE NEVER MEANT TO BE",
+			"birth":       1958,
+			"nationality": "American",
+			"created_at":  "2026-11-17T13:46:46.667227Z",
+			"updated_at":  "2026-11-17T13:46:46.667227Z",
+		},
 	}
 }
