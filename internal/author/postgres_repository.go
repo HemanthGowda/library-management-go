@@ -9,9 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// const authorColumns = `id, name, biography, birth, nationality,
-//                		   created_at, updated_at`
-
 type PostgresRepository struct {
 	pool *pgxpool.Pool
 }

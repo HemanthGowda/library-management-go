@@ -289,7 +289,9 @@ func TestViewAuthor(t *testing.T) {
 func TestViewAuthorNotFound(t *testing.T) {
 	repository := newFakeAuthorRepo()
 	service := NewService(repository)
+
 	_, err := service.View(context.Background(), "Unknown Author")
+	
 	var domainErr *domain.Error
 	require.ErrorAs(t, err, &domainErr)
 	require.Equal(t, domain.KindNotFound, domainErr.Kind)

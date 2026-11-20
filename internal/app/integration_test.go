@@ -248,8 +248,8 @@ func TestUnauthenticatedUserCannotViewAuthor(t *testing.T) {
 func TestLibrarianCanSearchAuthor(t *testing.T) {
 	reset(t)
 	insertUser(t, "librarian@library.local", "LibrarianPass1", "Library Staff", "LIBRARIAN")
-
 	token := login(t, "librarian@library.local", "LibrarianPass1")
+
 	status, _ := request(t, http.MethodGet, "/api/v1/authors", token, validAuthor())
 	require.Equal(t, http.StatusOK, status)
 }
@@ -271,7 +271,7 @@ func TestMemberCanSearchAuthor(t *testing.T) {
 }
 func TestUnauthenticatedUserCannotSearchAuthor(t *testing.T) {
 	reset(t)
-	
+
 	status, _ := request(t, http.MethodGet, "/api/v1/authors", "", nil)
 	require.Equal(t, http.StatusUnauthorized, status)
 }
