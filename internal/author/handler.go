@@ -63,7 +63,6 @@ func (h *Handler) View(c fiber.Ctx) error {
 
 func (h *Handler) Search(c fiber.Ctx) error {
 	principal, ok := auth.PrincipalFrom(c.Context())
-
 	if !ok {
 		return domain.Unauthorized("Authentication is required")
 	}
@@ -73,7 +72,9 @@ func (h *Handler) Search(c fiber.Ctx) error {
 	}
 
 	page := 1
-	limit := 20
+	limit := 10
+
+	name := c.Query("name")
 
 	if value := c.Query("page"); value != "" {
 		parsed, err := strconv.Atoi(value)
@@ -86,14 +87,12 @@ func (h *Handler) Search(c fiber.Ctx) error {
 	if value := c.Query("limit"); value != "" {
 		parsed, err := strconv.Atoi(value)
 		if err != nil || parsed < 1 {
-			return domain.BadRequest("Invalid Limit")
+			return domain.BadRequest("Invalid limit")
 		}
 		limit = parsed
 	}
 
-	name := c.Query("name")
 	response, err := h.service.Search(c.Context(), name, page, limit)
-
 	if err != nil {
 		return err
 	}

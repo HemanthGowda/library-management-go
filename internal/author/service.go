@@ -98,9 +98,8 @@ func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
 }
 
 func (s *Service) Search(ctx context.Context, name string, page int, limit int) (PaginatedResponse, error) {
-	offset := (page - 1) * limit
 
-	authors, err := s.repository.SearchAuthor(ctx, name, limit, offset)
+	authors, err := s.repository.SearchAuthor(ctx, name, page, limit)
 	if err != nil {
 		return PaginatedResponse{}, err
 	}
@@ -113,16 +112,14 @@ func (s *Service) Search(ctx context.Context, name string, page int, limit int) 
 
 	total, err := s.repository.CountAuthors(ctx, name)
 
-	totalpages := (total + limit - 1) / limit
+	if err != nil {
+		return PaginatedResponse{}, nil
+	}
 
 	return PaginatedResponse{
-		Data:       authors,
-		Total:      total,
-		Page:       page,
-		TotalPages: totalpages,
-		Limit:      limit,
+		Author: responses,
+		Total:  total,
 	}, nil
-
 }
 
 func toResponse(author Author) AuthorResponse {
@@ -135,8 +132,4 @@ func toResponse(author Author) AuthorResponse {
 		CreatedAt:   author.CreatedAt,
 		UpdatedAt:   author.UpdatedAt,
 	}
-}
-
-func returnPaginatedAuthors(ctx context.Context, authors []Author, total, page, limit int) {
-
 }

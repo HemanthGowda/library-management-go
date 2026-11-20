@@ -1,4 +1,4 @@
-# Add Author
+# Add Author(TASK 1)
 - path: internal/author
 
 ## Implementations
@@ -88,6 +88,10 @@ curl -s -X POST http://localhost:8080/api/v1/author \
     "path": "/api/v1/author"
 }
 ```
+# View Author(TASK 2)
+
+- admin, librarian and member can view the author details through id 
+
 **Implemented URL**
 
 (GET)http://localhost:8080/api/v1/authors?id

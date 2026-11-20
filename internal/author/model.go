@@ -30,9 +30,6 @@ type AuthorResponse struct {
 }
 
 type PaginatedResponse struct {
-	Data       []Author `json:"data"`
-	Total      int      `json:"total"`
-	Page       int      `json:"page"`
-	TotalPages int      `json:"total pages"`
-	Limit      int      `json:"limit"`
+	Author []AuthorResponse `json:"data"`
+	Total  int      `json:"total"`
 }

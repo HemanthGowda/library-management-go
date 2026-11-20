@@ -234,7 +234,7 @@ func TestLibrarianCanViewAuthor(t *testing.T) {
 
 	insertUser(t, "librarian@library.local", "LibrarianPass1", "Library Staff", "LIBRARIAN")
 	token := login(t, "librarian@library.local", "LibrarianPass1")
-	
+
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "American")
 	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
@@ -245,7 +245,36 @@ func TestUnauthenticatedUserCannotViewAuthor(t *testing.T) {
 	status, _ := request(t, http.MethodGet, "/api/v1/authors", "", nil)
 	require.Equal(t, http.StatusUnauthorized, status)
 }
+func TestLibrarianCanSearchAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "librarian@library.local", "LibrarianPass1", "Library Staff", "LIBRARIAN")
 
+	token := login(t, "librarian@library.local", "LibrarianPass1")
+	status, _ := request(t, http.MethodGet, "/api/v1/authors", token, validAuthor())
+	require.Equal(t, http.StatusOK, status)
+}
+func TestAdminCanSearchAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
+
+	token := login(t, "admin@library.local", "ChangeMe123!")
+	status, _ := request(t, http.MethodGet, "/api/v1/authors", token, validAuthor())
+	require.Equal(t, http.StatusOK, status)
+}
+func TestMemberCanSearchAuthor(t *testing.T) {
+	reset(t)
+	insertUser(t, "member@library.local", "MemberPass1", "Library Member", "MEMBER")
+
+	token := login(t, "member@library.local", "MemberPass1")
+	status, _ := request(t, http.MethodGet, "/api/v1/authors", token, validAuthor())
+	require.Equal(t, http.StatusOK, status)
+}
+func TestUnauthenticatedUserCannotSearchAuthor(t *testing.T) {
+	reset(t)
+	
+	status, _ := request(t, http.MethodGet, "/api/v1/authors", "", nil)
+	require.Equal(t, http.StatusUnauthorized, status)
+}
 func login(t *testing.T, email, rawPassword string) string {
 	t.Helper()
 	status, body := request(t, http.MethodPost, "/api/v1/auth/login", "", map[string]any{

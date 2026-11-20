@@ -2,13 +2,15 @@ package author
 
 import (
 	"context"
+	"strings"
+
 	"github.com/HemanthGowda/library-management-go/internal/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"strings"
 )
-const authorColumns = `id, name, biography, birth, nationality,
-               		   created_at, updated_at`
+
+// const authorColumns = `id, name, biography, birth, nationality,
+//                		   created_at, updated_at`
 
 type PostgresRepository struct {
 	pool *pgxpool.Pool
@@ -101,11 +103,13 @@ func (r *PostgresRepository) ViewAuthor(ctx context.Context, id string) (Author,
 func (r *PostgresRepository) SearchAuthor(ctx context.Context, name string, limit, offset int) ([]Author, error) {
 	query := `
 		SELECT id, name, biography, birth, nationality, created_at, updated_at
-		FROM author 
+		FROM authors
+		WHERE name ILIKE $1
 		ORDER BY name ASC
-		LIMIT $1 OFFSET $2
+		LIMIT $2 OFFSET $3
 		`
-	rows, err := r.pool.Query(ctx, query, name)
+
+	rows, err := r.pool.Query(ctx, query, "%"+strings.TrimSpace(name)+"%", limit, offset)
 
 	if err != nil {
 		return nil, err
@@ -140,14 +144,13 @@ func (r *PostgresRepository) SearchAuthor(ctx context.Context, name string, limi
 
 func (r *PostgresRepository) CountAuthors(ctx context.Context, name string) (int, error) {
 
-	var count int
-	err := r.pool.QueryRow(ctx, `
-        SELECT COUNT(`+authorColumns+`)
-        FROM doctors
+    var count int
+
+    err := r.pool.QueryRow(ctx, `
+        SELECT COUNT(*)
+        FROM authors
         WHERE name ILIKE $1
-		ORDER BY name ASC
-		`, "%"+strings.TrimSpace(name)+"%").Scan(&count)
+    `, "%"+strings.TrimSpace(name)+"%").Scan(&count)
 
-	return count, err
-
+    return count, err
 }
