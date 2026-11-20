@@ -82,7 +82,7 @@ func validateAuthor(name string, biography string, birth int, nationality string
 
 func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
 	author, err := s.repository.ViewAuthor(ctx, id)
-	
+
 	if err != nil {
 		if err == ErrNotFound {
 			return AuthorResponse{}, domain.NotFound("Author not found")
@@ -94,6 +94,31 @@ func (s *Service) View(ctx context.Context, id string) (AuthorResponse, error) {
 		Biography:   author.Biography,
 		Birth:       author.Birth,
 		Nationality: author.Nationality,
+	}, nil
+}
+
+func (s *Service) Search(ctx context.Context, name string, page int, limit int) (PaginatedResponse, error) {
+
+	authors, err := s.repository.SearchAuthor(ctx, name, page, limit)
+	if err != nil {
+		return PaginatedResponse{}, err
+	}
+
+	responses := make([]AuthorResponse, 0, len(authors))
+
+	for _, author := range authors {
+		responses = append(responses, toResponse(author))
+	}
+
+	total, err := s.repository.CountAuthors(ctx, name)
+
+	if err != nil {
+		return PaginatedResponse{}, nil
+	}
+
+	return PaginatedResponse{
+		Author: responses,
+		Total:  total,
 	}, nil
 }
 

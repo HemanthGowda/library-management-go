@@ -29,4 +29,7 @@ type AuthorResponse struct {
 	UpdatedAt   time.Time `json:"updated_at"`
 }
 
-
+type PaginatedResponse struct {
+	Author []AuthorResponse `json:"data"`
+	Total  int      `json:"total"`
+}

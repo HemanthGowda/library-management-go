@@ -2,6 +2,8 @@ package author
 
 import (
 	"context"
+	"strings"
+
 	"github.com/HemanthGowda/library-management-go/internal/db"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -93,4 +95,59 @@ func (r *PostgresRepository) ViewAuthor(ctx context.Context, id string) (Author,
 	}
 
 	return author, nil
+}
+
+func (r *PostgresRepository) SearchAuthor(ctx context.Context, name string, limit, offset int) ([]Author, error) {
+	query := `
+		SELECT id, name, biography, birth, nationality, created_at, updated_at
+		FROM authors
+		WHERE name ILIKE $1
+		ORDER BY name ASC
+		LIMIT $2 OFFSET $3
+		`
+
+	rows, err := r.pool.Query(ctx, query, "%"+strings.TrimSpace(name)+"%", limit, offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var authors []Author
+
+	for rows.Next() {
+		var author Author
+
+		err := rows.Scan(
+			&author.Id,
+			&author.Name,
+			&author.Biography,
+			&author.Birth,
+			&author.Nationality,
+			&author.CreatedAt,
+			&author.UpdatedAt,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+		authors = append(authors, author)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return authors, nil
+}
+
+func (r *PostgresRepository) CountAuthors(ctx context.Context, name string) (int, error) {
+
+    var count int
+
+    err := r.pool.QueryRow(ctx, `
+        SELECT COUNT(*)
+        FROM authors
+        WHERE name ILIKE $1
+    `, "%"+strings.TrimSpace(name)+"%").Scan(&count)
+
+    return count, err
 }

@@ -2,11 +2,10 @@ package author
 
 import (
 	"context"
-	"strings"
-	"testing"
-
 	"github.com/HemanthGowda/library-management-go/internal/domain"
 	"github.com/stretchr/testify/require"
+	"strings"
+	"testing"
 )
 
 func TestAutorNameUnique(t *testing.T) {
@@ -288,13 +287,135 @@ func TestViewAuthor(t *testing.T) {
 	require.Equal(t, "American", response.Nationality)
 }
 func TestViewAuthorNotFound(t *testing.T) {
-    repository := newFakeAuthorRepo()
-    service := NewService(repository)
-    _, err := service.View(context.Background(), "Unknown Author")
-    var domainErr *domain.Error
-    require.ErrorAs(t, err, &domainErr)
-    require.Equal(t, domain.KindNotFound, domainErr.Kind)
-    require.Contains(t, domainErr.Message, "Author not found")
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.View(context.Background(), "Unknown Author")
+	
+	var domainErr *domain.Error
+	require.ErrorAs(t, err, &domainErr)
+	require.Equal(t, domain.KindNotFound, domainErr.Kind)
+	require.Contains(t, domainErr.Message, "Author not found")
+}
+
+func TestSearchAuthors(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	_, err1 := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Michel jackson",
+		Biography:   "I am an author",
+		Birth:       1989,
+		Nationality: "Mexican",
+	})
+
+	require.NoError(t, err)
+	require.NoError(t, err1)
+
+	authors, err2 := service.Search(context.Background(), "Mi", 1, 2)
+
+	require.NoError(t, err2)
+
+	require.Equal(t, len(authors.Author), 2)
+	require.Equal(t, authors.Total, 2)
+}
+func TestPageOneContainsTwoRecords(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	_, err1 := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Michel jackson",
+		Biography:   "I am an author",
+		Birth:       1989,
+		Nationality: "Mexican",
+	})
+
+	_, err2 := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "orry",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	_, err3 := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "yamini",
+		Biography:   "I am an author",
+		Birth:       1989,
+		Nationality: "Mexican",
+	})
+
+	require.NoError(t, err)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	require.NoError(t, err3)
+
+	authors, err4 := service.Search(context.Background(), "", 1, 2)
+
+	require.NoError(t, err4)
+
+	require.Equal(t, len(authors.Author), 2)
+	require.Equal(t, authors.Total, 4)
+
+}
+
+func TestPageSecondContainsTwoRecords(t *testing.T) {
+	repository := newFakeAuthorRepo()
+	service := NewService(repository)
+
+	_, err := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Mitch Albom",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	_, err1 := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "Michel jackson",
+		Biography:   "I am an author",
+		Birth:       1989,
+		Nationality: "Mexican",
+	})
+
+	_, err2 := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "orry",
+		Biography:   "I am author of book called Tuesdays with morrie",
+		Birth:       1958,
+		Nationality: "American",
+	})
+
+	_, err3 := service.Add(context.Background(), CreateAuthorRequest{
+		Name:        "yamini",
+		Biography:   "I am an author",
+		Birth:       1989,
+		Nationality: "Mexican",
+	})
+
+	require.NoError(t, err)
+	require.NoError(t, err1)
+	require.NoError(t, err2)
+	require.NoError(t, err3)
+
+	authors, err4 := service.Search(context.Background(), "", 1, 2)
+
+	require.NoError(t, err4)
+
+	require.Equal(t, 2, len(authors.Author))
+	require.Equal(t, 4, authors.Total)
+
 }
 
 type fakeAuthorRepo struct {
@@ -334,4 +455,30 @@ func (f *fakeAuthorRepo) GetByName(_ context.Context, name string) (Author, erro
 		return Author{}, ErrNotFound
 	}
 	return author, nil
+}
+
+func (f *fakeAuthorRepo) SearchAuthor(_ context.Context, searchName string, page, limit int) ([]Author, error) {
+	authors := make([]Author, 0)
+
+	for _, author := range f.byName {
+		if strings.HasPrefix(strings.ToLower(author.Name), strings.ToLower(searchName)) {
+			authors = append(authors, author)
+		}
+	}
+
+	offset := (page - 1) * limit
+	end := offset + limit
+
+	return authors[offset:end], nil
+}
+
+func (f *fakeAuthorRepo) CountAuthors(_ context.Context, name string) (int, error) {
+	var count int
+
+	for name := range f.byName {
+		if strings.HasPrefix(f.byName[name].Name, name) {
+			count += 1
+		}
+	}
+	return count, nil
 }
