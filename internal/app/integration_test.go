@@ -172,8 +172,8 @@ func insertAuthor(t *testing.T, name, biography string, birth int, nationality s
 	t.Helper()
 	id := uuid.NewString()
 	_, err := application.Pool.Exec(context.Background(), `
-		INSERT INTO authors (id, name, biography, birth, nationality)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO authors (id, name, biography, birth, nationality, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, '2026-11-17T13:46:46.667227Z', '2026-11-17T13:46:46.667227Z')
 	`, id, name, biography, birth, nationality)
 	require.NoError(t, err)
 	return id
@@ -211,7 +211,7 @@ func TestGetAuthorForLoggedInAdminSucceeds(t *testing.T) {
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "I am author of book called Before coffee gets cold", 1958, "American")
 
-	status, author := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	status, author := request(t, http.MethodGet, "/api/v1/authors/"+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", author["name"])
 	require.Equal(t, "American", author["nationality"])
@@ -224,7 +224,7 @@ func TestAdminCanViewAuthor(t *testing.T) {
 
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "American")
-	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	status, body := request(t, http.MethodGet, "/api/v1/authors/"+id, token, nil)
 
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
@@ -236,7 +236,7 @@ func TestLibrarianCanViewAuthor(t *testing.T) {
 	token := login(t, "librarian@library.local", "LibrarianPass1")
 
 	id := insertAuthor(t, "Toshikazu Kawaguchi", "Author of Before the Coffee Gets Cold", 1958, "American")
-	status, body := request(t, http.MethodGet, "/api/v1/authors?id="+id, token, nil)
+	status, body := request(t, http.MethodGet, "/api/v1/authors/"+id, token, nil)
 	require.Equal(t, http.StatusOK, status)
 	require.Equal(t, "Toshikazu Kawaguchi", body["name"])
 }
@@ -280,16 +280,14 @@ func TestSearchPageMaintainLimitedAuthors(t *testing.T) {
 	insertUser(t, "admin@library.local", "ChangeMe123!", "Library Admin", "ADMIN")
 
 	token := login(t, "admin@library.local", "ChangeMe123!")
-	insertAuthor(t, "Mitch Albom", "I am author of book called Tuesdays with morrie", 1958, "American")
-	insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
-	insertAuthor(t, "patrik", "I am author", 1958, "American")
-	insertAuthor(t, "ritivik  ", "I am author", 1958, "American")
+	id1 := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
 
-	status, response := request(t, http.MethodGet, "http://localhost:8080/api/v1/authors?name=pa&page=1&limit=2", token, validAuthor())
-	status1, response1 := request(t, http.MethodGet, "http://localhost:8080/api/v1/authors?name=pa&page=1&limit=2", token, validAuthor())
+	status, response := request(t, http.MethodGet, "/api/v1/authors?name=pa&page=1&limit=2", token, nil)
+	fmt.Print(response)
+	fmt.Print("status:", status)
+	author_list1 := response["data"]
 
-	author_list1 := response["author_list"].([]any)
-	author_list2 := response1["author_list"].([]any)
+	require.EqualValues(t, validSearch(id1), author_list1)
 
 }
 func login(t *testing.T, email, rawPassword string) string {
@@ -354,25 +352,16 @@ func validAuthor() map[string]any {
 	}
 }
 
-func validSearch(id string) []map[string]any {
-	return []map[string]any{
-		{
-			"id":          id,
-			"name":        "ritivik",
-			"biography":   "I am author of book called i cant say goodbye to you",
-			"birth":       1958,
-			"nationality": "American",
-			"created_at":  "2026-11-18T08:08:48.254054Z",
-			"updated_at":  "2026-11-18T08:08:48.254054Z",
-		},
-		{
-			"id":          id,
+func validSearch(id1 any) any {
+	return []any{
+		map[string]any{
+			"id":          id1,
 			"name":        "palle vasu",
 			"biography":   "I am author of book called WE WERE NEVER MEANT TO BE",
-			"birth":       1958,
+			"birth":       float64(1958),
 			"nationality": "American",
-			"created_at":  "2026-11-17T13:46:46.667227Z",
-			"updated_at":  "2026-11-17T13:46:46.667227Z",
+			"created_at":  "2026-11-17T19:16:46.667227+05:30",
+			"updated_at":  "2026-11-17T19:16:46.667227+05:30",
 		},
 	}
 }
