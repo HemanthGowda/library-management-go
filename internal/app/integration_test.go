@@ -143,7 +143,7 @@ func reset(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func insertUser(t *testing.T, email, rawPassword, fullName, role string) {
+func insertUser(t *testing.T, email, rawPassword, fullName, role string) string {
 	t.Helper()
 	hash, err := bcrypt.GenerateFromPassword([]byte(rawPassword), bcrypt.MinCost)
 	require.NoError(t, err)
@@ -155,6 +155,8 @@ func insertUser(t *testing.T, email, rawPassword, fullName, role string) {
 	require.NoError(t, err)
 	_, err = application.Pool.Exec(context.Background(), `INSERT INTO user_roles (user_id, role) VALUES ($1, $2)`, id, role)
 	require.NoError(t, err)
+
+	return id
 }
 
 func insertBook(t *testing.T) string {
@@ -281,13 +283,14 @@ func TestSearchPageMaintainLimitedAuthors(t *testing.T) {
 
 	token := login(t, "admin@library.local", "ChangeMe123!")
 	id1 := insertAuthor(t, "palle vasu", "I am author of book called WE WERE NEVER MEANT TO BE", 1958, "American")
+	status, response := request(t, http.MethodGet, "/api/v1/authors?name=pa&page=1&limit=3", token, nil)
 
-	status, response := request(t, http.MethodGet, "/api/v1/authors?name=pa&page=1&limit=2", token, nil)
-	fmt.Print(response)
-	fmt.Print("status:", status)
-	author_list1 := response["data"]
+	author_list1 := response["data"].([]any)
+	author1 := author_list1[0].(map[string]any)
 
-	require.EqualValues(t, validSearch(id1), author_list1)
+	require.EqualValues(t, id1, author1["id"])
+	require.EqualValues(t, response["total"], 1)
+	require.Equal(t, http.StatusOK, status)
 
 }
 func login(t *testing.T, email, rawPassword string) string {
@@ -349,19 +352,5 @@ func validAuthor() map[string]any {
 		"nationality": "American",
 		"created_at":  "0001-01-01T00:00:00Z",
 		"updated_at":  "0001-01-01T00:00:00Z",
-	}
-}
-
-func validSearch(id1 any) any {
-	return []any{
-		map[string]any{
-			"id":          id1,
-			"name":        "palle vasu",
-			"biography":   "I am author of book called WE WERE NEVER MEANT TO BE",
-			"birth":       float64(1958),
-			"nationality": "American",
-			"created_at":  "2026-11-17T19:16:46.667227+05:30",
-			"updated_at":  "2026-11-17T19:16:46.667227+05:30",
-		},
 	}
 }
